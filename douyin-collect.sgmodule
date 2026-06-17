@@ -2,12 +2,12 @@
 #!desc = 点击收藏时，把 aweme_id 转发到你的暂存服务（供 dym 消费）。原请求不修改。
 #!category = 工具
 #!author = Everless321
-#!version = 4
+#!version = 5
 #!arguments = endpoint:https://your-server.example.com/collect,token:
 #!arguments-desc = endpoint: 暂存服务地址（含 /collect）\ntoken: 身份口令，需与服务器白名单一致
 
 [Script]
-douyin-collect-req = type=http-request,pattern=^https?:\/\/.*\.douyin\.com\/aweme\/v1\/web\/aweme\/collect\/,script-path=https://raw.githubusercontent.com/Everless321/douyin-collect-surge/main/surge-collect-intercept.js?v=3,requires-body=1,timeout=10,argument=endpoint={{{endpoint}}}&token={{{token}}}
+douyin-collect-req = type=http-request,pattern=^https?:\/\/.*\.douyin\.com\/aweme\/v1\/web\/aweme\/collect\/,script-path=https://raw.githubusercontent.com/Everless321/douyin-collect-surge/main/surge-collect-intercept.js?v=5,requires-body=1,timeout=10,argument=endpoint={{{endpoint}}}&token={{{token}}}
 
 [MITM]
 hostname = %APPEND% *.douyin.com

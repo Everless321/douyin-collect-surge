@@ -1,12 +1,10 @@
 /**
- * Surge HTTP 脚本：拦截抖音收藏请求，把 aweme_id 转发到暂存服务
+ * Surge HTTP 脚本：拦截抖音收藏请求，把 aweme_id 转发到暂存服务。
  *
- * 触发：http-request（原请求不修改，转发是旁路上报）
+ * 触发：http-request（原请求不修改，转发是旁路上报）。
  * 只在「收藏」(action=1) 时转发；取消收藏 (action=0) 不转发。
  *
- * 参数（在 Surge 模块详情页里填，不写进仓库）：
- *   endpoint  暂存服务地址（含 /collect），例如 https://xxx.com/collect
- *   token     身份口令，需与服务器白名单一致
+ * endpoint / token 由模块的 argument 传入（在 Surge 模块参数里填）。
  */
 
 const req = $request
@@ -25,12 +23,11 @@ for (const pair of rawBody.split('&')) {
 const action = Number(params.action)
 const awemeId = params.aweme_id
 
-// 读取模块参数（在 Surge 里填的 endpoint / token）
+// 读取模块参数
 const args = Object.fromEntries(new URLSearchParams($argument || ''))
 const ENDPOINT = (args.endpoint || '').trim()
 const TOKEN = (args.token || '').trim()
 
-// 只在收藏时转发；其它情况原样放行
 if (action !== 1 || !awemeId || !ENDPOINT) {
   $done({})
 } else {
@@ -50,7 +47,6 @@ if (action !== 1 || !awemeId || !ENDPOINT) {
       } else {
         $notification.post('抖音收藏·已上报', `aweme_id: ${awemeId}`, data || `HTTP ${resp && resp.status}`)
       }
-      // 在回调里放行：确保上报完成（代价是收藏按钮会多等一下下）
       $done({})
     }
   )
