@@ -1,10 +1,12 @@
 /**
- * Surge HTTP 脚本：拦截抖音收藏接口，打印真实请求参数
+ * Surge HTTP 脚本：拦截抖音收藏请求，把 aweme_id 转发到暂存服务
  *
- * 用途：点击 App/网页里的「收藏 / 取消收藏」按钮时，捕获实际发出的请求，
- *      验证 action=1（收藏）/ action=0（取消收藏）的约定。
+ * 触发：http-request（原请求不修改，转发是旁路上报）
+ * 只在「收藏」(action=1) 时转发；取消收藏 (action=0) 不转发。
  *
- * 触发事件：http-request（在请求发出前拦截，不修改、原样放行）
+ * 参数（在 Surge 模块详情页里填，不写进仓库）：
+ *   endpoint  暂存服务地址（含 /collect），例如 https://xxx.com/collect
+ *   token     身份口令，需与服务器白名单一致
  */
 
 const req = $request
@@ -20,28 +22,36 @@ for (const pair of rawBody.split('&')) {
   params[decodeURIComponent(key)] = decodeURIComponent(val)
 }
 
-const actionMap = { 0: '取消收藏', 1: '收藏' }
-const actionText = actionMap[params.action] ?? `未知(${params.action})`
+const action = Number(params.action)
+const awemeId = params.aweme_id
 
-const lines = [
-  '===== 抖音收藏接口拦截 =====',
-  `method:     ${req.method}`,
-  `url:        ${req.url}`,
-  `action:     ${params.action}  → ${actionText}`,
-  `aweme_id:   ${params.aweme_id}`,
-  `aweme_type: ${params.aweme_type}`,
-  `raw body:   ${rawBody}`,
-]
-const log = lines.join('\n')
+// 读取模块参数（在 Surge 里填的 endpoint / token）
+const args = Object.fromEntries(new URLSearchParams($argument || ''))
+const ENDPOINT = (args.endpoint || '').trim()
+const TOKEN = (args.token || '').trim()
 
-console.log(log)
-
-// 通知（标题/副标题/内容），方便在手机上直接看到
-$notification.post(
-  `抖音${actionText}`,
-  `aweme_id: ${params.aweme_id ?? '-'}`,
-  `action=${params.action ?? '-'} type=${params.aweme_type ?? '-'}`
-)
-
-// 原样放行，不修改请求
-$done({})
+// 只在收藏时转发；其它情况原样放行
+if (action !== 1 || !awemeId || !ENDPOINT) {
+  $done({})
+} else {
+  $httpClient.post(
+    {
+      url: ENDPOINT,
+      headers: { 'Content-Type': 'application/json', 'X-Collect-Token': TOKEN },
+      body: JSON.stringify({
+        aweme_id: awemeId,
+        action,
+        aweme_type: Number(params.aweme_type ?? 0),
+      }),
+    },
+    (err, resp, data) => {
+      if (err) {
+        $notification.post('抖音收藏·转发失败', `aweme_id: ${awemeId}`, String(err))
+      } else {
+        $notification.post('抖音收藏·已上报', `aweme_id: ${awemeId}`, data || `HTTP ${resp && resp.status}`)
+      }
+      // 在回调里放行：确保上报完成（代价是收藏按钮会多等一下下）
+      $done({})
+    }
+  )
+}
