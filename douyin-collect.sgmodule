@@ -2,8 +2,8 @@
 #!desc = 点击收藏时，把 aweme_id 转发到你的暂存服务（供 dym 消费）。原请求不修改。
 #!category = 工具
 #!author = Everless321
-#!version = 3
-#!arguments = endpoint:https://your-server.example.com/collect, token:
+#!version = 4
+#!arguments = endpoint:https://your-server.example.com/collect,token:
 #!arguments-desc = endpoint: 暂存服务地址（含 /collect）\ntoken: 身份口令，需与服务器白名单一致
 
 [Script]
